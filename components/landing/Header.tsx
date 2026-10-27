@@ -25,7 +25,7 @@ function Header() {
                     <Link href="/" className="border border-[var(--primary)] bg-[var(--card)] hover:bg-[var(--primary)]/10 rounded-xl px-4 py-2 transition">Login</Link>
                     <Link href="/" className="bg-[var(--primary)] px-4 py-2 rounded-xl text-white hover:bg-[#242424] transition">Signup</Link>
                 </div>
-                <div>
+                <div className="sm:hidden flex">
                     <Menu size={26} />
                 </div>
             </div>
