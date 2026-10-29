@@ -80,7 +80,7 @@ export default function LoginPage() {
 
     return (
         <main className="min-h-dvh w-full bg-[var(--background)] px-4 text-[var(--foreground)]">
-            <div className="mx-auto flex min-h-dvh w-full max-w-[1180px] flex-col">
+            <div className="mx-auto flex min-h-dvh w-full max-w-[1280px] flex-col">
 
                 {/* Login form */}
                 <div className="grid flex-1 items-center p-3">

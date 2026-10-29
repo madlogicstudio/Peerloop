@@ -122,8 +122,8 @@ export default function SignupPage() {
     "w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted-foreground)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15";
 
   return (
-    <main className="min-h-dvh w-full bg-[var(--background)] text-[var(--foreground)]">
-        <div className="mx-auto flex w-full max-w-[1180px] flex-col h-screen">
+    <main className="min-h-dvh w-full bg-[var(--background)] text-[var(--foreground)] px-4 mt-12">
+        <div className="mx-auto flex w-full max-w-[1280px] flex-col h-screen ">
 
             {/* Signup content */}
             <div className="grid flex-1 items-center p-3">
