@@ -33,7 +33,7 @@ export default function Hero() {
         {/* Hero content */}
             <div className="relative z-10 w-full sm;px-0 px-3">
 
-                <h1 className="w-full text-5xl font-bold leading-[1.04] tracking-[-0.055em] sm:text-6xl md:text-7xl xl:text-[82px]">
+                <h1 className="w-full text-7xl font-bold leading-[1.04] tracking-[-0.055em]">
                     Knowledge
                 <br />
                     Flows

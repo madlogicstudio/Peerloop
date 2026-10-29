@@ -6,6 +6,7 @@ import Header from "@/components/landing/Header"
 import Hero from "@/components/landing/Hero"
 
 function page() {
+          
   return (
     <div className="h-auto w-full flex flex-col items-center">
       <Header />

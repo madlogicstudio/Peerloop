@@ -15,7 +15,7 @@ function Cta() {
                         Have a skill to share?
                     </h2>
 
-                    <p className="mt-2 text-sm leading-6 text-[#242424]/75">
+                    <p className="mt-2 text-md leading-6 text-[#242424]/75">
                         Join the community and turn what you know into someone
                         else&apos;s next big discovery.
                     </p>
