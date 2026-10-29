@@ -9,6 +9,7 @@ function page() {
                 <Image src="/images/Maintenance.png" height={600} width={600} alt=""/>
                 <span className="font-sans font-semibold sm:text-2xl text-xl">Under Maintenance</span>
             </div>
+            <span></span>
         </div>
     )
 }
