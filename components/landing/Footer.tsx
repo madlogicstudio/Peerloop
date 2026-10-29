@@ -26,7 +26,7 @@ export default function Footer() {
         <footer className="font-sans max-w-[1280px] w-full mt-6">
             <div className="overflow-hidden sm:rounded-xl border border-foreground/10 bg-[var(--card)]">
                 {/* Main footer */}
-                <div className="grid gap-10 px-6 py-10 sm:px-8 md:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1.1fr] lg:gap-12 lg:px-12 lg:py-14">
+                <div className="grid gap-10 px-3 py-10 sm:px-8 md:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1.1fr] lg:gap-12 lg:px-12 lg:py-14">
                     {/* Brand */}
                     <div className="max-w-sm">
                         <Link
@@ -51,7 +51,7 @@ export default function Footer() {
                             something to learn.
                         </p>
 
-                        <div className="mt-6 inline-flex items-center px-3 py-2">
+                        <div className="mt-6 inline-flex items-center py-2">
                             <span className="text-md font-medium">
                                 A community-driven skill-sharing platform
                             </span>
@@ -98,9 +98,9 @@ export default function Footer() {
                 </div>
 
                 {/* Bottom bar */}
-                <div className="mx-6 border-t border-foreground/10 sm:mx-8 lg:mx-12" />
+                <div className="mx-3 border-t border-foreground/10 sm:mx-8 lg:mx-12" />
 
-                <div className="flex flex-col gap-4 px-6 py-5 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-12">
+                <div className="flex flex-col gap-4 px-3 py-5 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-12">
                     <p className="text-sm text-[var(--muted-foreground)]">
                         © {new Date().getFullYear()} Peerloop. All rights reserved.
                     </p>

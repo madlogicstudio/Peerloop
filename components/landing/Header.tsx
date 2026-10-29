@@ -14,7 +14,7 @@ function Header() {
 
     return (
         <section className="w-full flex flex-row itemcs-center justify-center">
-            <div className="font-sans max-w-[1280px] w-full flex flex-row sm:items-end items-center justify-between p-3 border-b border-foreground/10">
+            <div className="font-sans fixed top-0 z-30 bg-background max-w-[1280px] w-full flex flex-row sm:items-end items-center justify-between p-3 border-b border-foreground/10">
                 <div className="flex flex-row items-center gap-3">
                     <Image src='/Web-icon.png' height={42} width={42} alt="Peerloop-web-icon" className="sm:h-10 sm:w-10 h-8 w-8"/>
                     <Link href="/">
@@ -38,8 +38,8 @@ function Header() {
                 }
             </div>
             <div ref={menuRef} className={`w-full h-full lg:hidden flex flex-col items-start justify-start gap-3 
-                bg-[var(--background)] fixed top-12 left-0 transition-transform duration-300 border-b border-foreground/10
-                ${navOpen ? "translate-x-0" : "-translate-x-full"}
+                bg-background fixed top-12 left-0 transition-transform duration-300 border-b border-foreground/10
+                ${navOpen ? "translate-x-0" : "-translate-x-full"} z-50
                 ${!navOpen ? "translate-x-full" : "-translate-x-0"}`}>
                 
                 <div className="w-full flex flex-col items-start py-4 px-3">
