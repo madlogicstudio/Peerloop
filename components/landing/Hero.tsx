@@ -29,7 +29,7 @@ const skillExchanges = [
 
 export default function Hero() {
     return (
-        <section className="grid mt-6 rounded-xl max-w-[1280px] w-full items-center gap-12 overflow-hidden pb-16 pt-10 lg:grid-cols-[1.02fr_0.98fr] lg:gap-8 lg:px-12 lg:pb-20 lg:pt-8">
+        <section className="font-sans grid mt-6 rounded-xl max-w-[1280px] w-full items-center gap-12 overflow-hidden pb-16 pt-10 lg:grid-cols-[1.02fr_0.98fr] lg:gap-8 lg:px-12 lg:pb-20 lg:pt-8">
         {/* Hero content */}
             <div className="relative z-10 w-full sm;px-0 px-3">
 

@@ -3,7 +3,7 @@ import { BookOpen, ArrowUpRight } from "lucide-react"
 
 function Cta() {
     return (
-        <div className="max-w-[1280px] w-full relative overflow-hidden rounded-2xl bg-[#FFE829] p-5 text-[#242424] sm:p-6">
+        <div className="font-sans max-w-[1280px] w-full relative overflow-hidden rounded-2xl bg-[#FFE829] p-5 text-[#242424] sm:p-6">
                 <div className="absolute -right-5 -top-5 h-24 w-24 rounded-full border-[16px] border-[#F0491D]/20" />
 
                 <div className="relative">

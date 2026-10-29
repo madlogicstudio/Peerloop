@@ -23,7 +23,7 @@ const footerLinks = {
 
 export default function Footer() {
     return (
-        <footer className="max-w-[1280px] w-full mt-6">
+        <footer className="font-sans max-w-[1280px] w-full mt-6">
             <div className="overflow-hidden sm:rounded-xl border border-foreground/10 bg-[var(--card)]">
                 {/* Main footer */}
                 <div className="grid gap-10 px-6 py-10 sm:px-8 md:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1.1fr] lg:gap-12 lg:px-12 lg:py-14">
