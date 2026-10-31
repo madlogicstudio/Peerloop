@@ -6,14 +6,11 @@ import React, { useEffect, useRef, useState } from "react";
 import {
     Menu,
     X,
-    Search,
     Bell,
     ChevronDown,
     UserRound,
     Settings,
     LogOut,
-    Compass,
-    Users,
     Bookmark,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -27,9 +24,9 @@ type Profile = {
 
 type Props = {
     setIsActive: React.Dispatch<React.SetStateAction<string>>;
-}
+};
 
-export default function Header({setIsActive} : Props) {
+export default function Header({ setIsActive }: Props) {
     const [navOpen, setNavOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -179,9 +176,8 @@ export default function Header({setIsActive} : Props) {
     }
 
     return (
-        <header className="sticky top-0 z-50 w-full flex flex-col items-center border-b border-foreground/10 bg-[var(--background)]/95 backdrop-blur-xl">
-            <div className=" flex w-full max-w-[1280px] w-full items-center gap-4 sm:px-4 px-2 sm:py-3 py-2">
-               
+        <header className="sticky top-0 z-50 flex w-full flex-col items-center border-b border-foreground/10 bg-[var(--background)]/95 backdrop-blur-xl">
+            <div className="flex w-full max-w-[1280px] items-center gap-4 px-2 py-2 sm:px-4 sm:py-3">
                 <Link
                     href="/feed"
                     className="flex shrink-0 items-center gap-2.5"
@@ -192,19 +188,16 @@ export default function Header({setIsActive} : Props) {
                         height={38}
                         width={38}
                         alt="Peerloop"
-                        className="sm:h-8 sm:w-8 h-8 w-8"
+                        className="h-8 w-8"
                         priority
                     />
 
-                    <span className="font-semibold sm:text-[1.5rem] text-[1.2rem] hovered">
+                    <span className="hovered text-[1.2rem] font-semibold sm:text-[1.5rem]">
                         Peerloop
                     </span>
                 </Link>
 
-                 
-
-                {/* Right-side actions */}
-                <div className="ml-auto flex shrink-0 items-center sm:gap-3 ">
+                <div className="ml-auto flex shrink-0 items-center sm:gap-3">
                     <div className="hidden sm:block">
                         <ThemeToggle />
                     </div>
@@ -217,14 +210,13 @@ export default function Header({setIsActive} : Props) {
                         <Bell size={20} />
                     </Link>
 
-                    {/* Profile dropdown */}
                     <div ref={profileRef} className="relative">
                         <button
                             type="button"
                             onClick={() => setProfileOpen((open) => !open)}
                             aria-label="Open profile menu"
                             aria-expanded={profileOpen}
-                            className="cursor-pointer sm:flex hidden items-center gap-2 rounded-xl p-1.5 transition hover:bg-foreground/5"
+                            className="hidden cursor-pointer items-center gap-2 rounded-xl p-1.5 transition hover:bg-foreground/5 sm:flex"
                         >
                             <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[var(--primary)] text-sm font-semibold text-white">
                                 {!loading && avatarUrl ? (
@@ -262,21 +254,23 @@ export default function Header({setIsActive} : Props) {
                                 </div>
 
                                 <div className="py-2">
-                                    <Link
-                                        href="/saved"
-                                        onClick={() => setProfileOpen(false)}
-                                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-md text-foreground/80 transition hover:bg-foreground/5"
+                                    <div
+                                        onClick={() => {
+                                            setIsActive("bookmarks");
+                                            setProfileOpen(false);
+                                        }}
+                                        className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-md text-foreground/80 transition hover:bg-foreground/5"
                                     >
                                         <Bookmark size={18} />
                                         Saved Posts
-                                    </Link>
+                                    </div>
 
                                     <div
                                         onClick={() => {
-                                            setIsActive("settings")
-                                            setProfileOpen(false)
+                                            setIsActive("settings");
+                                            setProfileOpen(false);
                                         }}
-                                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-md text-foreground/80 transition hover:bg-foreground/5"
+                                        className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-md text-foreground/80 transition hover:bg-foreground/5"
                                     >
                                         <Settings size={18} />
                                         Settings
@@ -288,7 +282,7 @@ export default function Header({setIsActive} : Props) {
                                         type="button"
                                         onClick={handleSignOut}
                                         disabled={signingOut}
-                                        className="cursor-pointer flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-md text-red-500 transition hover:bg-red-500/10 disabled:opacity-50"
+                                        className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-md text-red-500 transition hover:bg-red-500/10 disabled:opacity-50"
                                     >
                                         <LogOut size={18} />
                                         {signingOut ? "Signing out..." : "Sign out"}
@@ -298,26 +292,24 @@ export default function Header({setIsActive} : Props) {
                         )}
                     </div>
 
-                    {/* Mobile menu toggle */}
                     <button
                         type="button"
                         onClick={() => setNavOpen((open) => !open)}
                         aria-label={navOpen ? "Close navigation" : "Open navigation"}
                         aria-expanded={navOpen}
-                        className="flex p-2 items-center justify-center rounded-xl text-foreground transition hover:bg-foreground/5 sm:hidden flex"
+                        className="flex cursor-pointer items-center justify-center rounded-xl p-2 text-foreground transition hover:bg-foreground/5 sm:hidden"
                     >
                         {navOpen ? <X size={20} /> : <Menu size={20} />}
                     </button>
                 </div>
             </div>
- 
+
             {navOpen && (
                 <div
                     ref={menuRef}
-                    className="border-t border-foreground/10 bg-[var(--background)] px-4 pb-5 pt-4 lg:hidden w-full z-10"
-                > 
+                    className="z-10 w-full border-t border-foreground/10 bg-[var(--background)] px-4 pb-5 pt-4 lg:hidden"
+                >
                     <nav className="flex flex-col gap-1">
-
                         <Link
                             href="/profile"
                             onClick={closeMobileMenu}

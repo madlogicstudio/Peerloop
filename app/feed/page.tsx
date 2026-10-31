@@ -5,6 +5,7 @@ import Image from "next/image"
 import { useState } from "react";
 import FeedPage from "./components/Feed";
 import SettingsPage from "./components/Settings";
+import Bookmarks from "./components/Bookmarks";
 
 function page() {
 
@@ -21,7 +22,9 @@ function page() {
             {isActive == "feed" && 
                 <FeedPage />
             }
-
+            {isActive == "bookmarks" && 
+                <Bookmarks setIsActive={setIsActive} />
+            }
             {isActive == "settings" && 
                 <SettingsPage setIsActive={setIsActive} />
             }

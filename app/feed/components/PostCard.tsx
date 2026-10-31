@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import {
     useCallback,
@@ -20,10 +20,6 @@ import {
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
-
-// =========================================
-// TYPES
-// =========================================
 
 export type PostData = {
     id: string;
@@ -56,34 +52,33 @@ type Props = {
     post: PostData;
     currentUserId: string | null;
     onPostDeleted: (postId: string) => void;
+    onBookmarkRemoved?: (postId: string) => void;
 };
-
-// =========================================
-// COMPONENT
-// =========================================
 
 export default function PostCard({
     post,
     currentUserId,
     onPostDeleted,
+    onBookmarkRemoved,
 }: Props) {
     const supabase = useMemo(() => createClient(), []);
 
-    // General states
     const [imageError, setImageError] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
 
-    // Delete states
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState("");
 
-    // Like states
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
     const [likeLoading, setLikeLoading] = useState(false);
+    const [likeError, setLikeError] = useState("");
 
-    // Comment states
+    const [bookmarked, setBookmarked] = useState(false);
+    const [bookmarkLoading, setBookmarkLoading] = useState(false);
+    const [bookmarkError, setBookmarkError] = useState("");
+
     const [commentsOpen, setCommentsOpen] = useState(false);
     const [comments, setComments] = useState<CommentData[]>([]);
     const [commentCount, setCommentCount] = useState(0);
@@ -92,16 +87,11 @@ export default function PostCard({
     const [commentSubmitting, setCommentSubmitting] = useState(false);
     const [commentError, setCommentError] = useState("");
 
-    // =========================================
-    // POST INFORMATION
-    // =========================================
-
     const imageUrl = post.image_path
         ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/post-images/${post.image_path}`
         : null;
 
     const profile = post.profiles?.[0];
-
     const authorName = profile?.full_name || "Peerloop Member";
     const avatarUrl = profile?.avatar_url;
 
@@ -116,10 +106,6 @@ export default function PostCard({
         }
     );
 
-    // =========================================
-    // LOAD LIKE AND COMMENT COUNTS
-    // =========================================
-
     useEffect(() => {
         let cancelled = false;
 
@@ -129,14 +115,13 @@ export default function PostCard({
                     likesResult,
                     userLikeResult,
                     commentsResult,
+                    bookmarkResult,
                 ] = await Promise.all([
-                    // Get total likes
                     supabase
                         .from("post_likes")
                         .select("*", { count: "exact", head: true })
                         .eq("post_id", post.id),
 
-                    // Check whether current user liked this post
                     currentUserId
                         ? supabase
                               .from("post_likes")
@@ -149,27 +134,37 @@ export default function PostCard({
                               error: null,
                           }),
 
-                    // Get total comments
                     supabase
                         .from("post_comments")
                         .select("*", { count: "exact", head: true })
                         .eq("post_id", post.id),
+
+                    currentUserId
+                        ? supabase
+                              .from("post_bookmarks")
+                              .select("post_id")
+                              .eq("post_id", post.id)
+                              .eq("user_id", currentUserId)
+                              .maybeSingle()
+                        : Promise.resolve({
+                              data: null,
+                              error: null,
+                          }),
                 ]);
 
                 if (likesResult.error) throw likesResult.error;
                 if (userLikeResult.error) throw userLikeResult.error;
                 if (commentsResult.error) throw commentsResult.error;
+                if (bookmarkResult.error) throw bookmarkResult.error;
 
                 if (cancelled) return;
 
                 setLikeCount(likesResult.count ?? 0);
                 setLiked(!!userLikeResult.data);
                 setCommentCount(commentsResult.count ?? 0);
+                setBookmarked(!!bookmarkResult.data);
             } catch (err) {
-                console.error(
-                    "Error loading post interactions:",
-                    err
-                );
+                console.error("Error loading post interactions:", err);
             }
         };
 
@@ -180,17 +175,21 @@ export default function PostCard({
         };
     }, [supabase, post.id, currentUserId]);
 
-    // =========================================
-    // LIKE / UNLIKE POST
-    // =========================================
-
     const handleLike = async () => {
         if (!currentUserId || likeLoading) return;
 
         setLikeLoading(true);
+        setLikeError("");
+
+        const previousState = liked;
+
+        setLiked(!previousState);
+        setLikeCount((count) =>
+            Math.max(0, count + (previousState ? -1 : 1))
+        );
 
         try {
-            if (liked) {
+            if (previousState) {
                 const { error } = await supabase
                     .from("post_likes")
                     .delete()
@@ -198,9 +197,6 @@ export default function PostCard({
                     .eq("user_id", currentUserId);
 
                 if (error) throw error;
-
-                setLiked(false);
-                setLikeCount((count) => Math.max(0, count - 1));
             } else {
                 const { error } = await supabase
                     .from("post_likes")
@@ -210,20 +206,64 @@ export default function PostCard({
                     });
 
                 if (error) throw error;
-
-                setLiked(true);
-                setLikeCount((count) => count + 1);
             }
         } catch (err) {
             console.error("Error updating like:", err);
+
+            setLiked(previousState);
+            setLikeCount((count) =>
+                Math.max(0, count + (previousState ? 1 : -1))
+            );
+
+            setLikeError("Unable to update your like. Please try again.");
         } finally {
             setLikeLoading(false);
         }
     };
 
-    // =========================================
-    // FETCH COMMENTS
-    // =========================================
+    const handleBookmark = async () => {
+        if (!currentUserId || bookmarkLoading) return;
+
+        setBookmarkLoading(true);
+        setBookmarkError("");
+
+        const previousState = bookmarked;
+
+        setBookmarked(!previousState);
+
+        try {
+            if (previousState) {
+                const { error } = await supabase
+                    .from("post_bookmarks")
+                    .delete()
+                    .eq("post_id", post.id)
+                    .eq("user_id", currentUserId);
+
+                if (error) throw error;
+
+                onBookmarkRemoved?.(post.id);
+            } else {
+                const { error } = await supabase
+                    .from("post_bookmarks")
+                    .insert({
+                        post_id: post.id,
+                        user_id: currentUserId,
+                    });
+
+                if (error) throw error;
+            }
+        } catch (err) {
+            console.error("Error updating bookmark:", err);
+
+            setBookmarked(previousState);
+
+            setBookmarkError(
+                "Unable to update bookmark. Please try again."
+            );
+        } finally {
+            setBookmarkLoading(false);
+        }
+    };
 
     const fetchComments = useCallback(async () => {
         setCommentsLoading(true);
@@ -238,16 +278,14 @@ export default function PostCard({
 
             if (error) throw error;
 
-            const fetchedComments = data || [];
+            const fetchedComments = data ?? [];
 
-            // Get unique commenter IDs
             const userIds = [
                 ...new Set(
                     fetchedComments.map((comment) => comment.user_id)
                 ),
             ];
 
-            // Fetch commenter profiles
             const {
                 data: profileRows,
                 error: profileError,
@@ -260,10 +298,9 @@ export default function PostCard({
 
             if (profileError) throw profileError;
 
-            // Attach profiles to comments
             const commentsWithProfiles: CommentData[] =
                 fetchedComments.map((comment) => {
-                    const matchingProfile = (profileRows || []).find(
+                    const matchingProfile = (profileRows ?? []).find(
                         (profile) => profile.id === comment.user_id
                     );
 
@@ -293,10 +330,6 @@ export default function PostCard({
         }
     }, [supabase, post.id]);
 
-    // =========================================
-    // TOGGLE COMMENTS
-    // =========================================
-
     const toggleComments = () => {
         const shouldOpen = !commentsOpen;
 
@@ -306,10 +339,6 @@ export default function PostCard({
             fetchComments();
         }
     };
-
-    // =========================================
-    // ADD COMMENT
-    // =========================================
 
     const handleAddComment = async (
         event: FormEvent<HTMLFormElement>
@@ -326,7 +355,6 @@ export default function PostCard({
         setCommentError("");
 
         try {
-            // Insert comment
             const { data, error } = await supabase
                 .from("post_comments")
                 .insert({
@@ -339,7 +367,6 @@ export default function PostCard({
 
             if (error) throw error;
 
-            // Fetch the current commenter's profile
             const {
                 data: commenterProfile,
                 error: profileError,
@@ -356,7 +383,6 @@ export default function PostCard({
                 );
             }
 
-            // Create the new comment
             const newComment: CommentData = {
                 ...data,
                 profiles: commenterProfile
@@ -369,12 +395,7 @@ export default function PostCard({
                     : [],
             };
 
-            // Update comments immediately
-            setComments((current) => [
-                ...current,
-                newComment,
-            ]);
-
+            setComments((current) => [...current, newComment]);
             setCommentCount((count) => count + 1);
             setCommentText("");
         } catch (err) {
@@ -387,10 +408,6 @@ export default function PostCard({
             setCommentSubmitting(false);
         }
     };
-
-    // =========================================
-    // DELETE POST
-    // =========================================
 
     const openDeleteModal = () => {
         setMenuOpen(false);
@@ -427,7 +444,6 @@ export default function PostCard({
                 );
             }
 
-            // Remove post image from storage
             if (post.image_path) {
                 const { error: storageError } = await supabase.storage
                     .from("post-images")
@@ -454,20 +470,11 @@ export default function PostCard({
         }
     };
 
-    // =========================================
-    // RENDER
-    // =========================================
-
     return (
         <>
             <article className="overflow-hidden rounded-2xl border border-foreground/10 bg-[var(--card)]">
-
-                {/* Post Header */}
                 <div className="flex items-center justify-between gap-3 p-4 sm:p-5">
-
                     <div className="flex min-w-0 items-center gap-3">
-
-                        {/* Author Avatar */}
                         {avatarUrl ? (
                             <img
                                 src={avatarUrl}
@@ -480,7 +487,6 @@ export default function PostCard({
                             </div>
                         )}
 
-                        {/* Author Information */}
                         <div className="min-w-0">
                             <h3 className="truncate text-sm font-bold sm:text-md">
                                 {authorName}
@@ -490,13 +496,10 @@ export default function PostCard({
                                 {formattedDate}
                             </p>
                         </div>
-
                     </div>
 
-                    {/* Post Options */}
                     {isOwnPost && (
                         <div className="relative shrink-0">
-
                             <button
                                 type="button"
                                 aria-label="More post options"
@@ -507,10 +510,8 @@ export default function PostCard({
                                 <MoreHorizontal size={20} />
                             </button>
 
-                            {/* Dropdown Menu */}
                             {menuOpen && (
                                 <div className="absolute right-0 top-full z-30 mt-2 w-48 overflow-hidden rounded-xl border border-foreground/10 bg-[var(--card)] p-1.5 shadow-lg">
-
                                     <button
                                         type="button"
                                         onClick={openDeleteModal}
@@ -519,19 +520,14 @@ export default function PostCard({
                                         <Trash2 size={18} />
                                         Delete post
                                     </button>
-
                                 </div>
                             )}
-
                         </div>
                     )}
-
                 </div>
 
-                {/* Delete Error */}
                 {deleteError && !confirmDeleteOpen && (
                     <div className="mx-4 mb-3 flex items-center justify-between gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 sm:mx-5">
-
                         <p className="text-sm text-red-500">
                             {deleteError}
                         </p>
@@ -544,15 +540,11 @@ export default function PostCard({
                         >
                             <X size={16} />
                         </button>
-
                     </div>
                 )}
 
-                {/* Post Content */}
                 <div className="space-y-3 px-4 pb-4 sm:px-5 sm:pb-5">
-
                     <div className="flex flex-wrap items-center gap-2">
-
                         <span className="rounded-full bg-[var(--primary)]/10 px-3 py-1 text-sm font-semibold text-[var(--primary)]">
                             {post.post_type}
                         </span>
@@ -562,7 +554,6 @@ export default function PostCard({
                                 {post.skill}
                             </span>
                         )}
-
                     </div>
 
                     <h2 className="text-lg font-extrabold sm:text-xl">
@@ -572,10 +563,8 @@ export default function PostCard({
                     <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground/80 sm:text-md">
                         {post.content}
                     </p>
-
                 </div>
 
-                {/* Post Image */}
                 {imageUrl && !imageError && (
                     <div className="w-full border-y border-foreground/10 bg-[var(--background)]">
                         <img
@@ -587,10 +576,8 @@ export default function PostCard({
                     </div>
                 )}
 
-                {/* Like and Comment Counts */}
                 {(likeCount > 0 || commentCount > 0) && (
                     <div className="flex items-center justify-between border-b border-foreground/10 px-4 py-3 text-sm text-[var(--muted-foreground)] sm:px-5">
-
                         <span>
                             {likeCount > 0 && (
                                 <>
@@ -612,16 +599,11 @@ export default function PostCard({
                                     : "comments"}
                             </button>
                         )}
-
                     </div>
                 )}
 
-                {/* Post Actions */}
                 <div className="flex items-center justify-between gap-2 p-4 sm:px-5">
-
                     <div className="flex items-center gap-4">
-
-                        {/* Like Button */}
                         <button
                             type="button"
                             onClick={handleLike}
@@ -641,10 +623,10 @@ export default function PostCard({
                             {liked ? "Liked" : "Like"}
                         </button>
 
-                        {/* Comment Button */}
                         <button
                             type="button"
                             onClick={toggleComments}
+                            aria-expanded={commentsOpen}
                             className={`inline-flex cursor-pointer items-center gap-2 text-sm font-semibold transition ${
                                 commentsOpen
                                     ? "text-[var(--primary)]"
@@ -654,36 +636,60 @@ export default function PostCard({
                             <MessageCircle size={19} />
                             Comment
                         </button>
-
                     </div>
 
-                    {/* Bookmark Button */}
                     <button
                         type="button"
-                        aria-label="Save post"
-                        className="rounded-full p-2 text-[var(--muted-foreground)] transition hover:bg-foreground/5 hover:text-[var(--primary)]"
+                        onClick={handleBookmark}
+                        disabled={!currentUserId || bookmarkLoading}
+                        aria-label={
+                            bookmarked ? "Remove bookmark" : "Save post"
+                        }
+                        aria-pressed={bookmarked}
+                        title={
+                            bookmarked ? "Remove bookmark" : "Save post"
+                        }
+                        className={`rounded-full p-2 transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                            bookmarked
+                                ? "bg-[var(--primary)]/10 text-[var(--primary)]"
+                                : "text-[var(--muted-foreground)] hover:bg-foreground/5 hover:text-[var(--primary)]"
+                        }`}
                     >
-                        <Bookmark size={19} />
+                        <Bookmark
+                            size={19}
+                            className={bookmarked ? "fill-current" : ""}
+                        />
                     </button>
-
                 </div>
 
-                {/* Comments Section */}
+                {likeError && (
+                    <div className="px-4 pb-3 sm:px-5">
+                        <p className="text-sm text-red-500">
+                            {likeError}
+                        </p>
+                    </div>
+                )}
+
+                {bookmarkError && (
+                    <div className="px-4 pb-3 sm:px-5">
+                        <p className="text-sm text-red-500">
+                            {bookmarkError}
+                        </p>
+                    </div>
+                )}
+
                 {commentsOpen && (
                     <div className="border-t border-foreground/10 bg-foreground/[0.02] p-4 sm:p-5">
-
                         <h3 className="mb-4 text-sm font-bold">
                             Comments ({commentCount})
                         </h3>
 
-                        {/* Loading */}
                         {commentsLoading ? (
                             <p className="py-4 text-center text-sm text-[var(--muted-foreground)]">
                                 Loading comments...
                             </p>
                         ) : commentError && comments.length === 0 ? (
                             <div className="flex items-center justify-between gap-3 rounded-xl bg-red-500/10 p-3">
-
                                 <p className="text-sm text-red-500">
                                     {commentError}
                                 </p>
@@ -695,7 +701,6 @@ export default function PostCard({
                                 >
                                     Retry
                                 </button>
-
                             </div>
                         ) : comments.length === 0 ? (
                             <p className="py-4 text-center text-sm text-[var(--muted-foreground)]">
@@ -703,7 +708,6 @@ export default function PostCard({
                             </p>
                         ) : (
                             <div className="mb-5 space-y-4">
-
                                 {comments.map((comment) => {
                                     const commentProfile =
                                         comment.profiles?.[0];
@@ -717,8 +721,6 @@ export default function PostCard({
                                             key={comment.id}
                                             className="flex items-start gap-3"
                                         >
-
-                                            {/* Commenter Avatar */}
                                             {commentProfile?.avatar_url ? (
                                                 <img
                                                     src={commentProfile.avatar_url}
@@ -727,17 +729,12 @@ export default function PostCard({
                                                 />
                                             ) : (
                                                 <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-sm font-bold text-white">
-                                                    {name
-                                                        .charAt(0)
-                                                        .toUpperCase()}
+                                                    {name.charAt(0).toUpperCase()}
                                                 </div>
                                             )}
 
-                                            {/* Comment Content */}
                                             <div className="min-w-0 flex-1 rounded-xl bg-[var(--card)] px-3 py-2.5">
-
                                                 <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-
                                                     <p className="text-sm font-bold">
                                                         {name}
                                                     </p>
@@ -753,29 +750,23 @@ export default function PostCard({
                                                             }
                                                         )}
                                                     </p>
-
                                                 </div>
 
                                                 <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground/80">
                                                     {comment.content}
                                                 </p>
-
                                             </div>
-
                                         </div>
                                     );
                                 })}
-
                             </div>
                         )}
 
-                        {/* Add Comment Form */}
                         {currentUserId ? (
                             <form
                                 onSubmit={handleAddComment}
                                 className="space-y-2"
                             >
-
                                 <textarea
                                     value={commentText}
                                     onChange={(event) =>
@@ -794,7 +785,6 @@ export default function PostCard({
                                 )}
 
                                 <div className="flex items-center justify-between gap-3">
-
                                     <p className="text-sm text-[var(--muted-foreground)]">
                                         {commentText.length}/2000
                                     </p>
@@ -813,24 +803,16 @@ export default function PostCard({
                                             ? "Posting..."
                                             : "Post comment"}
                                     </button>
-
                                 </div>
-
                             </form>
                         ) : (
                             <p className="text-sm text-[var(--muted-foreground)]">
                                 Sign in to join the conversation.
                             </p>
                         )}
-
                     </div>
                 )}
-
             </article>
-
-            {/* ========================================= */}
-            {/* DELETE CONFIRMATION MODAL */}
-            {/* ========================================= */}
 
             {confirmDeleteOpen && (
                 <div
@@ -841,7 +823,6 @@ export default function PostCard({
                         }
                     }}
                 >
-
                     <div
                         role="alertdialog"
                         aria-modal="true"
@@ -849,8 +830,6 @@ export default function PostCard({
                         aria-describedby="delete-modal-description"
                         className="w-full max-w-md rounded-2xl border border-foreground/10 bg-[var(--card)] p-5 shadow-2xl sm:p-6"
                     >
-
-                        {/* Modal Heading */}
                         <h2
                             id="delete-modal-title"
                             className="text-lg font-bold sm:text-xl"
@@ -858,7 +837,6 @@ export default function PostCard({
                             Delete post?
                         </h2>
 
-                        {/* Modal Description */}
                         <p
                             id="delete-modal-description"
                             className="mt-2 text-sm leading-relaxed text-[var(--muted-foreground)]"
@@ -867,7 +845,6 @@ export default function PostCard({
                             action cannot be undone.
                         </p>
 
-                        {/* Modal Error */}
                         {deleteError && (
                             <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5">
                                 <p className="text-sm text-red-500">
@@ -876,9 +853,7 @@ export default function PostCard({
                             </div>
                         )}
 
-                        {/* Modal Actions */}
                         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-
                             <button
                                 type="button"
                                 onClick={closeDeleteModal}
@@ -906,13 +881,10 @@ export default function PostCard({
                                     </>
                                 )}
                             </button>
-
                         </div>
-
                     </div>
                 </div>
             )}
-
         </>
     );
 }

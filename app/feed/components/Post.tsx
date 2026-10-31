@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -23,7 +22,6 @@ export default function Post({
 
     const [posts, setPosts] = useState<PostData[]>([]);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -32,7 +30,6 @@ export default function Post({
         setError("");
 
         try {
-            // Get authenticated user
             const {
                 data: { user },
                 error: authError,
@@ -42,7 +39,6 @@ export default function Post({
 
             setCurrentUserId(user?.id ?? null);
 
-            // Fetch posts
             let query = supabase
                 .from("posts")
                 .select(`
@@ -56,12 +52,10 @@ export default function Post({
                     created_at
                 `);
 
-            // Filter by post type
             if (activeFilter !== "All") {
                 query = query.eq("post_type", activeFilter);
             }
 
-            // Search posts
             if (searchQuery.trim()) {
                 const search = searchQuery.trim();
 
@@ -70,7 +64,6 @@ export default function Post({
                 );
             }
 
-            // Sort newest first
             query = query.order("created_at", {
                 ascending: false,
             });
@@ -81,12 +74,10 @@ export default function Post({
 
             const fetchedPosts = data || [];
 
-            // Get unique user IDs
             const userIds = [
                 ...new Set(fetchedPosts.map((post) => post.user_id)),
             ];
 
-            // Fetch profiles separately
             const {
                 data: profileRows,
                 error: profileError,
@@ -99,7 +90,6 @@ export default function Post({
 
             if (profileError) throw profileError;
 
-            // Attach profiles to posts
             const postsWithProfiles: PostData[] = fetchedPosts.map((post) => {
                 const matchingProfile = (profileRows || []).find(
                     (profile) => profile.id === post.user_id
@@ -119,45 +109,38 @@ export default function Post({
             });
 
             setPosts(postsWithProfiles);
-
         } catch (err) {
             console.error("Error fetching posts:", err);
 
             setError(
                 "We couldn't load the posts. Please try again."
             );
-
         } finally {
             setLoading(false);
         }
     }, [activeFilter, searchQuery, supabase]);
 
-    // Fetch posts when filters or search change
     useEffect(() => {
         fetchPosts();
     }, [fetchPosts]);
 
-    // Remove deleted post from feed immediately
     const handlePostDeleted = (postId: string) => {
         setPosts((currentPosts) =>
             currentPosts.filter((post) => post.id !== postId)
         );
     };
 
-    // Loading State
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center">
-                <MorphingInfinity className="h-24 w-24 text-[var(--primary)]"/>
+                <MorphingInfinity className="h-24 w-24 text-[var(--primary)]" />
             </div>
         );
     }
 
-    // Error State
     if (error) {
         return (
             <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 rounded-2xl border border-foreground/10 bg-[var(--card)] p-6 text-center sm:min-h-[300px]">
-
                 <p className="text-sm text-[var(--muted-foreground)]">
                     {error}
                 </p>
@@ -169,12 +152,10 @@ export default function Post({
                 >
                     Try Again
                 </button>
-
             </div>
         );
     }
 
-    // Empty State
     if (posts.length === 0) {
         return (
             <div className="flex min-h-[280px] w-full items-center justify-center rounded-2xl border border-foreground/10 bg-[var(--card)] text-center sm:min-h-[300px]">
@@ -185,10 +166,8 @@ export default function Post({
         );
     }
 
-    // Posts
     return (
         <div className="w-full space-y-4">
-
             {posts.map((post) => (
                 <PostCard
                     key={post.id}
@@ -197,7 +176,6 @@ export default function Post({
                     onPostDeleted={handlePostDeleted}
                 />
             ))}
-
         </div>
     );
 }

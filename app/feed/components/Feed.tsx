@@ -43,7 +43,6 @@ export default function FeedPage() {
 
     const [showComposer, setShowComposer] = useState(false);
 
-    // Post form states
     const [newTitle, setNewTitle] = useState("");
     const [newContent, setNewContent] = useState("");
 
@@ -52,21 +51,17 @@ export default function FeedPage() {
 
     const [newSkill, setNewSkill] = useState("");
 
-    // Image states
     const [selectedImage, setSelectedImage] =
         useState<File | null>(null);
 
     const [imagePreview, setImagePreview] =
         useState<string | null>(null);
 
-    // Publishing states
     const [isPublishing, setIsPublishing] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
-    // Refresh feed after publishing
     const [feedRefreshKey, setFeedRefreshKey] = useState(0);
 
-    // Create and clean up image preview URLs
     useEffect(() => {
         if (!selectedImage) {
             setImagePreview(null);
@@ -82,7 +77,6 @@ export default function FeedPage() {
         };
     }, [selectedImage]);
 
-    // Reset composer
     const resetComposer = () => {
         setNewTitle("");
         setNewContent("");
@@ -101,7 +95,6 @@ export default function FeedPage() {
         }
     };
 
-    // Handle image selection
     const handleImageChange = (
         e: React.ChangeEvent<HTMLInputElement>
     ) => {
@@ -139,7 +132,6 @@ export default function FeedPage() {
         setSelectedImage(file);
     };
 
-    // Publish post
     const handlePublish = async () => {
         if (!newTitle.trim() || !newContent.trim()) {
             setErrorMessage(
@@ -154,7 +146,6 @@ export default function FeedPage() {
         let uploadedImagePath: string | null = null;
 
         try {
-            // Get authenticated user
             const {
                 data: { user },
                 error: userError,
@@ -166,7 +157,6 @@ export default function FeedPage() {
                 );
             }
 
-            // Upload image if selected
             if (selectedImage) {
                 const extension =
                     selectedImage.type === "image/jpeg"
@@ -195,7 +185,6 @@ export default function FeedPage() {
                 uploadedImagePath = uploadData.path;
             }
 
-            // Insert post into database
             const { error: insertError } = await supabase
                 .from("posts")
                 .insert({
@@ -211,16 +200,13 @@ export default function FeedPage() {
                 throw insertError;
             }
 
-            // Close and reset composer
             resetComposer();
 
-            // Refresh the feed
             setFeedRefreshKey((prev) => prev + 1);
 
         } catch (error) {
             console.error("Post publishing error:", error);
 
-            // Remove uploaded image if database insertion fails
             if (uploadedImagePath) {
                 const { error: cleanupError } =
                     await supabase.storage
@@ -248,18 +234,12 @@ export default function FeedPage() {
 
     return (
         <div className="flex min-h-screen w-full flex-col items-center bg-[var(--background)] text-[var(--foreground)]">
-
             <Header />
 
             <main className="mx-auto w-full max-w-[1280px] min-w-0 px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
-
                 <div className="flex w-full min-w-0 flex-col gap-5 lg:flex-row lg:gap-6">
-
                     <section className="w-full min-w-0 flex-1 space-y-4 sm:space-y-5">
-
-                        {/* Search bar */}
                         <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-foreground/10 bg-[var(--card)] px-3 py-3 sm:gap-3 sm:px-4">
-
                             <Search
                                 size={20}
                                 className="shrink-0 text-[var(--muted-foreground)]"
@@ -285,10 +265,8 @@ export default function FeedPage() {
                                     <X size={18} />
                                 </button>
                             )}
-
                         </div>
 
-                        {/* Create post shortcut */}
                         <button
                             type="button"
                             onClick={() => {
@@ -297,7 +275,6 @@ export default function FeedPage() {
                             }}
                             className="flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-2xl border border-foreground/10 bg-[var(--card)]/40 p-3 text-left transition hover:border-[var(--primary)]/40 sm:gap-3 sm:p-4"
                         >
-
                             <div className="flex shrink-0 items-center justify-center rounded-full bg-[var(--primary)] p-2 text-white">
                                 <PenLine size={16} />
                             </div>
@@ -305,14 +282,10 @@ export default function FeedPage() {
                             <span className="min-w-0 flex-1 truncate text-sm text-[var(--muted-foreground)] sm:text-md">
                                 Share something with the community...
                             </span>
-
                         </button>
 
-                        {/* Feed tabs */}
                         <div className="w-full min-w-0 overflow-hidden border-b border-foreground/10">
-
                             <div className="flex w-full items-center gap-5 sm:gap-7">
-
                                 {(
                                     ["For You", "Latest", "Popular"] as FeedTab[]
                                 ).map((tab) => (
@@ -333,16 +306,11 @@ export default function FeedPage() {
                                         )}
                                     </button>
                                 ))}
-
                             </div>
-
                         </div>
 
-                        {/* Post type filters */}
                         <div className="w-full min-w-0 overflow-hidden">
-
                             <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-2">
-
                                 {["All", ...postTypes].map((filter) => (
                                     <button
                                         key={filter}
@@ -357,30 +325,21 @@ export default function FeedPage() {
                                         {filter}
                                     </button>
                                 ))}
-
                             </div>
-
                         </div>
 
-                        {/* Posts feed */}
                         <div className="min-h-[280px] w-full sm:min-h-[420px]">
-
                             <Post
                                 key={feedRefreshKey}
                                 activeTab={activeTab}
                                 activeFilter={activeFilter}
                                 searchQuery={searchQuery}
                             />
-
                         </div>
-
                     </section>
-
                 </div>
-
             </main>
 
-            {/* Create post modal */}
             {showComposer && (
                 <div
                     className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-3 backdrop-blur-sm sm:items-center"
@@ -393,12 +352,8 @@ export default function FeedPage() {
                         }
                     }}
                 >
-
                     <div className="my-auto max-h-[calc(100dvh-24px)] w-full max-w-2xl overflow-y-auto hide-scrollbar rounded-2xl border border-foreground/10 bg-[var(--card)] p-4 shadow-2xl sm:max-h-[90vh] sm:p-6">
-
-                        {/* Modal header */}
                         <div className="mb-5 flex items-start justify-between gap-3 sm:mb-6">
-
                             <div className="min-w-0">
                                 <h2 className="text-lg font-extrabold sm:text-xl">
                                     Create a Post
@@ -418,20 +373,15 @@ export default function FeedPage() {
                             >
                                 <X size={18} />
                             </button>
-
                         </div>
 
                         <div className="space-y-5">
-
-                            {/* Post type */}
                             <div>
-
                                 <label className="mb-2 block text-sm font-semibold sm:text-md">
                                     Post Type
                                 </label>
 
                                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-
                                     {postTypes.map((type) => (
                                         <button
                                             key={type}
@@ -446,14 +396,10 @@ export default function FeedPage() {
                                             {type}
                                         </button>
                                     ))}
-
                                 </div>
-
                             </div>
 
-                            {/* Title */}
                             <div>
-
                                 <label
                                     htmlFor="postTitle"
                                     className="mb-2 block text-sm font-semibold sm:text-md"
@@ -470,12 +416,9 @@ export default function FeedPage() {
                                     disabled={isPublishing}
                                     className="w-full min-w-0 rounded-xl border border-foreground/15 bg-[var(--background)] px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] sm:text-md"
                                 />
-
                             </div>
 
-                            {/* Content */}
                             <div>
-
                                 <label
                                     htmlFor="postContent"
                                     className="mb-2 block text-sm font-semibold sm:text-md"
@@ -492,12 +435,9 @@ export default function FeedPage() {
                                     disabled={isPublishing}
                                     className="w-full min-w-0 resize-y rounded-xl border border-foreground/15 bg-[var(--background)] px-4 py-3 text-sm leading-relaxed outline-none transition focus:border-[var(--primary)] sm:text-md"
                                 />
-
                             </div>
 
-                            {/* Skill or topic */}
                             <div>
-
                                 <label
                                     htmlFor="postSkill"
                                     className="mb-2 block text-sm font-semibold sm:text-md"
@@ -513,12 +453,9 @@ export default function FeedPage() {
                                     disabled={isPublishing}
                                     className="w-full min-w-0 rounded-xl border border-foreground/15 bg-[var(--background)] px-4 py-3 text-sm outline-none focus:border-[var(--primary)] sm:text-md"
                                 />
-
                             </div>
 
-                            {/* Image upload */}
                             <div>
-
                                 <label className="mb-2 block text-sm font-semibold sm:text-md">
                                     Add an Image
 
@@ -537,7 +474,6 @@ export default function FeedPage() {
                                 />
 
                                 {!imagePreview ? (
-
                                     <label
                                         htmlFor="postImage"
                                         className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-foreground/20 bg-[var(--background)] px-4 py-8 text-center transition hover:border-[var(--primary)] hover:bg-[var(--primary)]/5 ${
@@ -546,7 +482,6 @@ export default function FeedPage() {
                                                 : "cursor-pointer"
                                         }`}
                                     >
-
                                         <div className="rounded-full bg-[var(--primary)]/10 p-3 text-[var(--primary)]">
                                             <ImagePlus size={24} />
                                         </div>
@@ -558,13 +493,9 @@ export default function FeedPage() {
                                         <span className="text-sm text-[var(--muted-foreground)]">
                                             JPG, PNG, or WebP · Maximum 5 MB
                                         </span>
-
                                     </label>
-
                                 ) : (
-
                                     <div className="relative overflow-hidden rounded-xl border border-foreground/10 bg-[var(--background)] p-2">
-
                                         <img
                                             src={imagePreview}
                                             alt="Selected post image preview"
@@ -594,14 +525,10 @@ export default function FeedPage() {
                                         <p className="mt-2 truncate px-1 text-sm text-[var(--muted-foreground)]">
                                             {selectedImage?.name}
                                         </p>
-
                                     </div>
-
                                 )}
-
                             </div>
 
-                            {/* Error message */}
                             {errorMessage && (
                                 <div
                                     role="alert"
@@ -611,9 +538,7 @@ export default function FeedPage() {
                                 </div>
                             )}
 
-                            {/* Publish button */}
                             <div className="flex flex-col gap-3 border-t border-foreground/10 pt-5 sm:flex-row sm:items-center sm:justify-end">
-
                                 <button
                                     type="button"
                                     onClick={handlePublish}
@@ -624,24 +549,17 @@ export default function FeedPage() {
                                     }
                                     className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#242424] disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:text-md"
                                 >
-
                                     <Send size={17} />
 
                                     {isPublishing
                                         ? "Publishing..."
                                         : "Publish Post"}
-
                                 </button>
-
                             </div>
-
                         </div>
-
                     </div>
-
                 </div>
             )}
-
         </div>
     );
 }

@@ -2,11 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MorphingInfinity } from "@/components/ui/MorphingInfinity";
 import {
-    Settings,
     UserRound,
     Mail,
     LockKeyhole,
@@ -19,7 +17,6 @@ import {
     Eye,
     EyeOff,
     CalendarDays,
-    ShieldCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -30,14 +27,13 @@ type Profile = {
 
 type Props = {
     setIsActive: React.Dispatch<React.SetStateAction<string>>;
-}
+};
 
-export default function SettingsPage({setIsActive} : Props) {
+export default function SettingsPage({ setIsActive }: Props) {
     const supabase = useMemo(() => createClient(), []);
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Profile
     const [userId, setUserId] = useState("");
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
@@ -45,16 +41,13 @@ export default function SettingsPage({setIsActive} : Props) {
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-    // Account
     const [createdAt, setCreatedAt] = useState("");
 
-    // Password
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    // States
     const [loading, setLoading] = useState(true);
     const [savingProfile, setSavingProfile] = useState(false);
     const [savingPassword, setSavingPassword] = useState(false);
@@ -64,7 +57,6 @@ export default function SettingsPage({setIsActive} : Props) {
     const [passwordError, setPasswordError] = useState("");
     const [passwordSuccess, setPasswordSuccess] = useState("");
 
-    // Load user profile
     useEffect(() => {
         let active = true;
 
@@ -121,7 +113,6 @@ export default function SettingsPage({setIsActive} : Props) {
         };
     }, [router, supabase]);
 
-    // Avatar preview
     useEffect(() => {
         if (!avatarFile) {
             setPreviewUrl(null);
@@ -134,7 +125,6 @@ export default function SettingsPage({setIsActive} : Props) {
         return () => URL.revokeObjectURL(objectUrl);
     }, [avatarFile]);
 
-    // Initials
     const initials =
         fullName
             .trim()
@@ -145,7 +135,6 @@ export default function SettingsPage({setIsActive} : Props) {
             .join("")
             .toUpperCase() || "U";
 
-    // Avatar selection
     function handleAvatarChange(
         event: React.ChangeEvent<HTMLInputElement>
     ) {
@@ -171,7 +160,6 @@ export default function SettingsPage({setIsActive} : Props) {
         setAvatarFile(file);
     }
 
-    // Save profile
     async function handleSaveProfile(
         event: React.FormEvent<HTMLFormElement>
     ) {
@@ -190,7 +178,6 @@ export default function SettingsPage({setIsActive} : Props) {
         try {
             let updatedAvatarUrl = avatarUrl;
 
-            // Upload avatar
             if (avatarFile) {
                 const extension =
                     avatarFile.name.split(".").pop()?.toLowerCase() || "jpg";
@@ -215,7 +202,6 @@ export default function SettingsPage({setIsActive} : Props) {
                 updatedAvatarUrl = data.publicUrl;
             }
 
-            // Update profile table
             const { error: updateError } = await supabase
                 .from("profiles")
                 .update({
@@ -226,7 +212,6 @@ export default function SettingsPage({setIsActive} : Props) {
 
             if (updateError) throw updateError;
 
-            // Update local state
             setAvatarUrl(updatedAvatarUrl);
             setAvatarFile(null);
 
@@ -246,7 +231,6 @@ export default function SettingsPage({setIsActive} : Props) {
         }
     }
 
-    // Change password
     async function handleChangePassword(
         event: React.FormEvent<HTMLFormElement>
     ) {
@@ -296,20 +280,18 @@ export default function SettingsPage({setIsActive} : Props) {
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center">
-                <MorphingInfinity className="h-24 w-24 text-[var(--primary)]"/>
+                <MorphingInfinity className="h-24 w-24 text-[var(--primary)]" />
             </div>
         );
     }
 
     return (
-        <main className="min-h-screen w-full bg-[var(--background)] ">
-
-            <div className="mx-auto max-w-[1280px] w-full px-4 py-8 sm:px-6 lg:px-8">
-
-                {/* Page Header */}
-                <div className="w-full mb-6">
-                    <span onClick={() => setIsActive("feed")}
-                        className="cursor-pointer hover:text-[var(--primary)] inline-flex items-center gap-2 text-md text-[var(--muted-foreground)] transition "
+        <main className="min-h-screen w-full bg-[var(--background)]">
+            <div className="mx-auto w-full max-w-[1280px] px-4 py-8 sm:px-6 lg:px-8">
+                <div className="mb-6 w-full">
+                    <span
+                        onClick={() => setIsActive("feed")}
+                        className="inline-flex cursor-pointer items-center gap-2 text-md text-[var(--muted-foreground)] transition hover:text-[var(--primary)]"
                     >
                         <ArrowLeft size={18} />
                         Back to Feed
@@ -317,16 +299,12 @@ export default function SettingsPage({setIsActive} : Props) {
                 </div>
 
                 <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[250px_minmax(0,1fr)]">
-
-                    {/* Sidebar */}
                     <aside className="h-fit rounded-2xl border border-foreground/10 bg-[var(--card)] p-3 lg:sticky lg:top-24">
-
                         <p className="px-3 py-3 text-sm font-semibold tracking-wide text-[var(--muted-foreground)]">
                             General
                         </p>
 
                         <nav className="flex flex-col gap-1">
-
                             <a
                                 href="#profile"
                                 className="flex items-center gap-3 rounded-xl bg-[var(--primary)]/10 px-3 py-3 text-sm font-semibold text-[var(--primary)] transition hover:bg-[var(--primary)]/15"
@@ -350,16 +328,10 @@ export default function SettingsPage({setIsActive} : Props) {
                                 <LockKeyhole size={19} />
                                 Change Password
                             </a>
-
                         </nav>
-
-                
                     </aside>
 
-                    {/* Main Settings Content */}
                     <div className="min-w-0 space-y-6">
-
-                        {/* PROFILE SETTINGS */}
                         <form
                             id="profile"
                             onSubmit={handleSaveProfile}
@@ -374,14 +346,12 @@ export default function SettingsPage({setIsActive} : Props) {
                                 </p>
                             </div>
 
-                            {/* Avatar */}
                             <div className="mb-8">
                                 <label className="mb-3 block text-sm font-semibold text-foreground">
                                     Profile Picture
                                 </label>
 
                                 <div className="flex flex-wrap items-center gap-5">
-
                                     <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--primary)] text-2xl font-bold text-white">
                                         {previewUrl || avatarUrl ? (
                                             <Image
@@ -433,7 +403,6 @@ export default function SettingsPage({setIsActive} : Props) {
                                 </div>
                             </div>
 
-                            {/* Full Name */}
                             <div className="mb-6">
                                 <label
                                     htmlFor="fullName"
@@ -456,7 +425,6 @@ export default function SettingsPage({setIsActive} : Props) {
                                 />
                             </div>
 
-                            {/* Feedback */}
                             {profileError && (
                                 <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-500">
                                     <AlertCircle size={18} className="mt-0.5 shrink-0" />
@@ -492,7 +460,6 @@ export default function SettingsPage({setIsActive} : Props) {
                             </div>
                         </form>
 
-                        {/* ACCOUNT INFORMATION */}
                         <section
                             id="account"
                             className="scroll-mt-28 rounded-2xl border border-foreground/10 bg-[var(--card)] p-5 shadow-sm sm:p-7"
@@ -507,8 +474,6 @@ export default function SettingsPage({setIsActive} : Props) {
                             </div>
 
                             <div className="space-y-6">
-
-                                {/* Email */}
                                 <div>
                                     <label className="mb-2 block text-sm font-semibold text-foreground">
                                         Email Address
@@ -534,7 +499,6 @@ export default function SettingsPage({setIsActive} : Props) {
                                     </p>
                                 </div>
 
-                                {/* User ID */}
                                 <div>
                                     <label className="mb-2 block text-sm font-semibold text-foreground">
                                         Account ID
@@ -552,7 +516,6 @@ export default function SettingsPage({setIsActive} : Props) {
                                     </div>
                                 </div>
 
-                                {/* Created At */}
                                 <div>
                                     <label className="mb-2 block text-sm font-semibold text-foreground">
                                         Member Since
@@ -578,11 +541,9 @@ export default function SettingsPage({setIsActive} : Props) {
                                         </span>
                                     </div>
                                 </div>
-
                             </div>
                         </section>
 
-                        {/* CHANGE PASSWORD */}
                         <form
                             id="password"
                             onSubmit={handleChangePassword}
@@ -598,8 +559,6 @@ export default function SettingsPage({setIsActive} : Props) {
                             </div>
 
                             <div className="space-y-5">
-
-                                {/* New Password */}
                                 <div>
                                     <label
                                         htmlFor="newPassword"
@@ -640,7 +599,6 @@ export default function SettingsPage({setIsActive} : Props) {
                                     </div>
                                 </div>
 
-                                {/* Confirm Password */}
                                 <div>
                                     <label
                                         htmlFor="confirmPassword"
@@ -684,10 +642,8 @@ export default function SettingsPage({setIsActive} : Props) {
                                 <p className="text-sm text-[var(--muted-foreground)]">
                                     Your password must contain at least 6 characters.
                                 </p>
-
                             </div>
 
-                            {/* Feedback */}
                             {passwordError && (
                                 <div className="mt-5 flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-500">
                                     <AlertCircle size={18} className="mt-0.5 shrink-0" />
@@ -722,7 +678,6 @@ export default function SettingsPage({setIsActive} : Props) {
                                 </button>
                             </div>
                         </form>
-
                     </div>
                 </div>
             </div>
