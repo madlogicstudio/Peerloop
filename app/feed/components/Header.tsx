@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
     Menu,
     X,
@@ -25,7 +25,11 @@ type Profile = {
     avatar_url: string | null;
 };
 
-export default function Header() {
+type Props = {
+    setIsActive: React.Dispatch<React.SetStateAction<string>>;
+}
+
+export default function Header({setIsActive} : Props) {
     const [navOpen, setNavOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -177,7 +181,7 @@ export default function Header() {
     return (
         <header className="sticky top-0 z-50 w-full flex flex-col items-center border-b border-foreground/10 bg-[var(--background)]/95 backdrop-blur-xl">
             <div className=" flex w-full max-w-[1280px] w-full items-center gap-4 sm:px-4 px-2 sm:py-3 py-2">
-                {/* Logo */}
+               
                 <Link
                     href="/feed"
                     className="flex shrink-0 items-center gap-2.5"
@@ -197,39 +201,10 @@ export default function Header() {
                     </span>
                 </Link>
 
-                <form
-                    onSubmit={handleSearch}
-                    className="ml-auto hidden w-full max-w-md md:flex"
-                    role="search"
-                >
-                    <div className="flex w-full items-center gap-2 px-3 rounded-xl border border-foreground/10 bg-[var(--card)] transition focus-within:border-[var(--primary)]">
-                        <Search
-                            size={18}
-                            className="shrink-0 text-[var(--muted-foreground)]"
-                        />
-
-                        <input
-                            type="search"
-                            value={searchQuery}
-                            onChange={(event) =>
-                                setSearchQuery(event.target.value)
-                            }
-                            placeholder="Search skills, posts, communities..."
-                            aria-label="Search Peerloop"
-                            className="w-full bg-transparent py-2 text-sm text-foreground outline-none placeholder:text-[var(--muted-foreground)]"
-                        />
-
-                        <button
-                            type="submit"
-                            className="sr-only"
-                        >
-                            Search
-                        </button>
-                    </div>
-                </form>
+                 
 
                 {/* Right-side actions */}
-                <div className="ml-auto flex shrink-0 items-center sm:gap-3 md:ml-0">
+                <div className="ml-auto flex shrink-0 items-center sm:gap-3 ">
                     <div className="hidden sm:block">
                         <ThemeToggle />
                     </div>
@@ -276,7 +251,7 @@ export default function Header() {
 
                         {profileOpen && (
                             <div className="absolute right-0 top-full mt-3 w-64 overflow-hidden rounded-2xl border border-foreground/10 bg-[var(--card)] p-2 shadow-xl">
-                                <div className="border-b border-foreground/10 px-3 py-3">
+                                <div className="border-b border-foreground/10 px-3 py-4">
                                     <p className="truncate text-md font-semibold text-foreground">
                                         {loading ? "Loading profile..." : fullName}
                                     </p>
@@ -288,15 +263,6 @@ export default function Header() {
 
                                 <div className="py-2">
                                     <Link
-                                        href="/profile"
-                                        onClick={() => setProfileOpen(false)}
-                                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-md text-foreground/80 transition hover:bg-foreground/5"
-                                    >
-                                        <UserRound size={18} />
-                                        My Profile
-                                    </Link>
-
-                                    <Link
                                         href="/saved"
                                         onClick={() => setProfileOpen(false)}
                                         className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-md text-foreground/80 transition hover:bg-foreground/5"
@@ -305,14 +271,16 @@ export default function Header() {
                                         Saved Posts
                                     </Link>
 
-                                    <Link
-                                        href="/settings"
-                                        onClick={() => setProfileOpen(false)}
+                                    <div
+                                        onClick={() => {
+                                            setIsActive("settings")
+                                            setProfileOpen(false)
+                                        }}
                                         className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-md text-foreground/80 transition hover:bg-foreground/5"
                                     >
                                         <Settings size={18} />
                                         Settings
-                                    </Link>
+                                    </div>
                                 </div>
 
                                 <div className="border-t border-foreground/10 pt-2 pl-1">
@@ -336,39 +304,18 @@ export default function Header() {
                         onClick={() => setNavOpen((open) => !open)}
                         aria-label={navOpen ? "Close navigation" : "Open navigation"}
                         aria-expanded={navOpen}
-                        className="flex h-10 w-10 items-center justify-center rounded-xl text-foreground transition hover:bg-foreground/5 lg:hidden"
+                        className="flex p-2 items-center justify-center rounded-xl text-foreground transition hover:bg-foreground/5 sm:hidden flex"
                     >
                         {navOpen ? <X size={20} /> : <Menu size={20} />}
                     </button>
                 </div>
             </div>
-
-            {/* Mobile navigation */}
+ 
             {navOpen && (
                 <div
                     ref={menuRef}
-                    className="border-t border-foreground/10 bg-[var(--background)] px-4 pb-5 pt-4 lg:hidden w-full"
-                >
-                    <form onSubmit={handleSearch} className="mb-4 md:hidden h-full w-full">
-                        <div className="flex items-center gap-2 rounded-xl border border-foreground/10 bg-[var(--card)] px-3.5">
-                            <Search
-                                size={18}
-                                className="text-[var(--muted-foreground)]"
-                            />
-
-                            <input
-                                type="search"
-                                value={searchQuery}
-                                onChange={(event) =>
-                                    setSearchQuery(event.target.value)
-                                }
-                                placeholder="Search Peerloop..."
-                                aria-label="Search Peerloop"
-                                className="w-full bg-transparent py-3 text-sm text-foreground outline-none placeholder:text-[var(--muted-foreground)]"
-                            />
-                        </div>
-                    </form>
-
+                    className="border-t border-foreground/10 bg-[var(--background)] px-4 pb-5 pt-4 lg:hidden w-full z-10"
+                > 
                     <nav className="flex flex-col gap-1">
 
                         <Link
