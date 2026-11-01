@@ -173,7 +173,7 @@ export default function Post({
                     key={post.id}
                     post={post}
                     currentUserId={currentUserId}
-                    onPostDeleted={handlePostDeleted}
+                    onPostDelete={handlePostDeleted}
                 />
             ))}
         </div>

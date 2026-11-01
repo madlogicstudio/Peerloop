@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -273,8 +272,8 @@ export default function Bookmarks({setIsActive}: Props) {
                             key={post.id}
                             post={post}
                             currentUserId={currentUserId}
-                            onPostDeleted={handlePostDeleted}
-                            onBookmarkRemoved={handleBookmarkRemoved}
+                            onPostDelete={handlePostDeleted}
+                            onBookmarkRemove={handleBookmarkRemoved}
                         />
                     ))}
                 </div>
