@@ -57,6 +57,8 @@ export default function SettingsPage({ setIsActive }: Props) {
     const [passwordError, setPasswordError] = useState("");
     const [passwordSuccess, setPasswordSuccess] = useState("");
 
+    const [navActive, setNavActive] = useState("profile");
+
     useEffect(() => {
         let active = true;
 
@@ -307,7 +309,10 @@ export default function SettingsPage({ setIsActive }: Props) {
                         <nav className="flex flex-col gap-1">
                             <a
                                 href="#profile"
-                                className="flex items-center gap-3 rounded-xl bg-[var(--primary)]/10 px-3 py-3 text-sm font-semibold text-[var(--primary)] transition hover:bg-[var(--primary)]/15"
+                                onClick={() => setNavActive("profile")}
+                                className={`${navActive === "profile" ? " bg-[var(--primary)]/10" : ""}
+                                    flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold 
+                                    text-[var(--primary)] transition hover:bg-[var(--primary)]/15`}
                             >
                                 <UserRound size={19} />
                                 Profile
@@ -315,7 +320,10 @@ export default function SettingsPage({ setIsActive }: Props) {
 
                             <a
                                 href="#account"
-                                className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-foreground/70 transition hover:bg-foreground/5 hover:text-foreground"
+                                onClick={() => setNavActive("account-information")}
+                                className={`${navActive === "account-information" ? " bg-[var(--primary)]/10" : ""}
+                                    flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold 
+                                    text-[var(--primary)] transition hover:bg-[var(--primary)]/15`}
                             >
                                 <Mail size={19} />
                                 Account Information
@@ -323,7 +331,10 @@ export default function SettingsPage({ setIsActive }: Props) {
 
                             <a
                                 href="#password"
-                                className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-foreground/70 transition hover:bg-foreground/5 hover:text-foreground"
+                                onClick={() => setNavActive("change-password")}
+                                className={`${navActive === "change-password" ? " bg-[var(--primary)]/10" : ""}
+                                    flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold 
+                                    text-[var(--primary)] transition hover:bg-[var(--primary)]/15`}
                             >
                                 <LockKeyhole size={19} />
                                 Change Password

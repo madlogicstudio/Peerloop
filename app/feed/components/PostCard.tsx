@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -21,6 +22,12 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 
+export type ProfileData = {
+    id?: string;
+    full_name: string | null;
+    avatar_url: string | null;
+};
+
 export type PostData = {
     id: string;
     user_id: string;
@@ -30,10 +37,7 @@ export type PostData = {
     skill: string | null;
     image_path: string | null;
     created_at: string;
-    profiles: {
-        full_name: string | null;
-        avatar_url: string | null;
-    }[] | null;
+    profiles?: ProfileData[] | null;
 };
 
 type CommentData = {
@@ -42,33 +46,32 @@ type CommentData = {
     user_id: string;
     content: string;
     created_at: string;
-    profiles: {
-        full_name: string | null;
-        avatar_url: string | null;
-    }[] | null;
+    profiles: ProfileData[] | null;
 };
 
 type Props = {
     post: PostData;
     currentUserId: string | null;
-    onPostDeleted: (postId: string) => void;
-    onBookmarkRemoved?: (postId: string) => void;
+    onPostDelete: (postId: string) => void;
+    onBookmarkRemove?: (postId: string) => void;
 };
 
 export default function PostCard({
     post,
     currentUserId,
-    onPostDeleted,
-    onBookmarkRemoved,
+    onPostDelete,
+    onBookmarkRemove,
 }: Props) {
     const supabase = useMemo(() => createClient(), []);
 
     const [imageError, setImageError] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
-
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState("");
+
+    const [authorProfile, setAuthorProfile] =
+        useState<ProfileData | null>(post.profiles?.[0] ?? null);
 
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
@@ -88,23 +91,56 @@ export default function PostCard({
     const [commentError, setCommentError] = useState("");
 
     const imageUrl = post.image_path
-        ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/post-images/${post.image_path}`
+        ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/post-images/${post.image_path
+              .split("/")
+              .map(encodeURIComponent)
+              .join("/")}`
         : null;
 
-    const profile = post.profiles?.[0];
-    const authorName = profile?.full_name || "Peerloop Member";
-    const avatarUrl = profile?.avatar_url;
+    const authorName =
+        authorProfile?.full_name || "Peerloop Member";
+
+    const avatarUrl = authorProfile?.avatar_url;
 
     const isOwnPost = currentUserId === post.user_id;
 
-    const formattedDate = new Date(post.created_at).toLocaleDateString(
-        "en-US",
-        {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-        }
-    );
+    const formattedDate = new Date(
+        post.created_at
+    ).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const fetchAuthorProfile = async () => {
+            const { data, error } = await supabase
+                .from("public_profiles")
+                .select("id, full_name, avatar_url")
+                .eq("id", post.user_id)
+                .maybeSingle();
+
+            if (error) {
+                console.error(
+                    "Error fetching post author profile:",
+                    error
+                );
+                return;
+            }
+
+            if (!cancelled && data) {
+                setAuthorProfile(data);
+            }
+        };
+
+        fetchAuthorProfile();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [supabase, post.user_id]);
 
     useEffect(() => {
         let cancelled = false;
@@ -119,7 +155,10 @@ export default function PostCard({
                 ] = await Promise.all([
                     supabase
                         .from("post_likes")
-                        .select("*", { count: "exact", head: true })
+                        .select("*", {
+                            count: "exact",
+                            head: true,
+                        })
                         .eq("post_id", post.id),
 
                     currentUserId
@@ -136,7 +175,10 @@ export default function PostCard({
 
                     supabase
                         .from("post_comments")
-                        .select("*", { count: "exact", head: true })
+                        .select("*", {
+                            count: "exact",
+                            head: true,
+                        })
                         .eq("post_id", post.id),
 
                     currentUserId
@@ -164,7 +206,10 @@ export default function PostCard({
                 setCommentCount(commentsResult.count ?? 0);
                 setBookmarked(!!bookmarkResult.data);
             } catch (err) {
-                console.error("Error loading post interactions:", err);
+                console.error(
+                    "Error loading post interactions:",
+                    err
+                );
             }
         };
 
@@ -184,6 +229,7 @@ export default function PostCard({
         const previousState = liked;
 
         setLiked(!previousState);
+
         setLikeCount((count) =>
             Math.max(0, count + (previousState ? -1 : 1))
         );
@@ -211,11 +257,14 @@ export default function PostCard({
             console.error("Error updating like:", err);
 
             setLiked(previousState);
+
             setLikeCount((count) =>
                 Math.max(0, count + (previousState ? 1 : -1))
             );
 
-            setLikeError("Unable to update your like. Please try again.");
+            setLikeError(
+                "Unable to update your like. Please try again."
+            );
         } finally {
             setLikeLoading(false);
         }
@@ -241,7 +290,7 @@ export default function PostCard({
 
                 if (error) throw error;
 
-                onBookmarkRemoved?.(post.id);
+                onBookmarkRemove?.(post.id);
             } else {
                 const { error } = await supabase
                     .from("post_bookmarks")
@@ -272,9 +321,13 @@ export default function PostCard({
         try {
             const { data, error } = await supabase
                 .from("post_comments")
-                .select("id, post_id, user_id, content, created_at")
+                .select(
+                    "id, post_id, user_id, content, created_at"
+                )
                 .eq("post_id", post.id)
-                .order("created_at", { ascending: true });
+                .order("created_at", {
+                    ascending: true,
+                });
 
             if (error) throw error;
 
@@ -282,26 +335,35 @@ export default function PostCard({
 
             const userIds = [
                 ...new Set(
-                    fetchedComments.map((comment) => comment.user_id)
+                    fetchedComments.map(
+                        (comment) => comment.user_id
+                    )
                 ),
             ];
 
             const {
                 data: profileRows,
                 error: profileError,
-            } = userIds.length > 0
-                ? await supabase
-                      .from("profiles")
-                      .select("id, full_name, avatar_url")
-                      .in("id", userIds)
-                : { data: [], error: null };
+            } =
+                userIds.length > 0
+                    ? await supabase
+                          .from("public_profiles")
+                          .select("id, full_name, avatar_url")
+                          .in("id", userIds)
+                    : {
+                          data: [],
+                          error: null,
+                      };
 
             if (profileError) throw profileError;
 
             const commentsWithProfiles: CommentData[] =
                 fetchedComments.map((comment) => {
-                    const matchingProfile = (profileRows ?? []).find(
-                        (profile) => profile.id === comment.user_id
+                    const matchingProfile = (
+                        profileRows ?? []
+                    ).find(
+                        (profile) =>
+                            profile.id === comment.user_id
                     );
 
                     return {
@@ -309,8 +371,10 @@ export default function PostCard({
                         profiles: matchingProfile
                             ? [
                                   {
-                                      full_name: matchingProfile.full_name,
-                                      avatar_url: matchingProfile.avatar_url,
+                                      full_name:
+                                          matchingProfile.full_name,
+                                      avatar_url:
+                                          matchingProfile.avatar_url,
                                   },
                               ]
                             : [],
@@ -362,7 +426,9 @@ export default function PostCard({
                     user_id: currentUserId,
                     content: trimmedComment,
                 })
-                .select("id, post_id, user_id, content, created_at")
+                .select(
+                    "id, post_id, user_id, content, created_at"
+                )
                 .single();
 
             if (error) throw error;
@@ -371,7 +437,7 @@ export default function PostCard({
                 data: commenterProfile,
                 error: profileError,
             } = await supabase
-                .from("profiles")
+                .from("public_profiles")
                 .select("full_name, avatar_url")
                 .eq("id", currentUserId)
                 .maybeSingle();
@@ -388,14 +454,20 @@ export default function PostCard({
                 profiles: commenterProfile
                     ? [
                           {
-                              full_name: commenterProfile.full_name,
-                              avatar_url: commenterProfile.avatar_url,
+                              full_name:
+                                  commenterProfile.full_name,
+                              avatar_url:
+                                  commenterProfile.avatar_url,
                           },
                       ]
                     : [],
             };
 
-            setComments((current) => [...current, newComment]);
+            setComments((current) => [
+                ...current,
+                newComment,
+            ]);
+
             setCommentCount((count) => count + 1);
             setCommentText("");
         } catch (err) {
@@ -423,13 +495,22 @@ export default function PostCard({
     };
 
     const handleDeletePost = async () => {
-        if (!isOwnPost || !currentUserId || deleting) return;
+        if (
+            !isOwnPost ||
+            !currentUserId ||
+            deleting
+        ) {
+            return;
+        }
 
         setDeleting(true);
         setDeleteError("");
 
         try {
-            const { data, error: deleteError } = await supabase
+            const {
+                data,
+                error: deleteError,
+            } = await supabase
                 .from("posts")
                 .delete()
                 .eq("id", post.id)
@@ -445,9 +526,10 @@ export default function PostCard({
             }
 
             if (post.image_path) {
-                const { error: storageError } = await supabase.storage
-                    .from("post-images")
-                    .remove([post.image_path]);
+                const { error: storageError } =
+                    await supabase.storage
+                        .from("post-images")
+                        .remove([post.image_path]);
 
                 if (storageError) {
                     console.error(
@@ -458,7 +540,7 @@ export default function PostCard({
             }
 
             setConfirmDeleteOpen(false);
-            onPostDeleted(post.id);
+            onPostDelete(post.id);
         } catch (err) {
             console.error("Error deleting post:", err);
 
@@ -504,7 +586,9 @@ export default function PostCard({
                                 type="button"
                                 aria-label="More post options"
                                 aria-expanded={menuOpen}
-                                onClick={() => setMenuOpen(!menuOpen)}
+                                onClick={() =>
+                                    setMenuOpen(!menuOpen)
+                                }
                                 className="cursor-pointer rounded-full p-2 text-[var(--muted-foreground)] transition hover:bg-foreground/5"
                             >
                                 <MoreHorizontal size={20} />
@@ -582,7 +666,9 @@ export default function PostCard({
                             {likeCount > 0 && (
                                 <>
                                     {likeCount}{" "}
-                                    {likeCount === 1 ? "like" : "likes"}
+                                    {likeCount === 1
+                                        ? "like"
+                                        : "likes"}
                                 </>
                             )}
                         </span>
@@ -617,7 +703,9 @@ export default function PostCard({
                         >
                             <ThumbsUp
                                 size={19}
-                                className={liked ? "fill-current" : ""}
+                                className={
+                                    liked ? "fill-current" : ""
+                                }
                             />
 
                             {liked ? "Liked" : "Like"}
@@ -643,12 +731,16 @@ export default function PostCard({
                         onClick={handleBookmark}
                         disabled={!currentUserId || bookmarkLoading}
                         aria-label={
-                            bookmarked ? "Remove bookmark" : "Save post"
+                            bookmarked
+                                ? "Remove bookmark"
+                                : "Save post"
+                        }
+                        title={
+                            bookmarked
+                                ? "Remove bookmark"
+                                : "Save post"
                         }
                         aria-pressed={bookmarked}
-                        title={
-                            bookmarked ? "Remove bookmark" : "Save post"
-                        }
                         className={`rounded-full p-2 transition disabled:cursor-not-allowed disabled:opacity-50 ${
                             bookmarked
                                 ? "bg-[var(--primary)]/10 text-[var(--primary)]"
@@ -657,7 +749,9 @@ export default function PostCard({
                     >
                         <Bookmark
                             size={19}
-                            className={bookmarked ? "fill-current" : ""}
+                            className={
+                                bookmarked ? "fill-current" : ""
+                            }
                         />
                     </button>
                 </div>
@@ -688,7 +782,8 @@ export default function PostCard({
                             <p className="py-4 text-center text-sm text-[var(--muted-foreground)]">
                                 Loading comments...
                             </p>
-                        ) : commentError && comments.length === 0 ? (
+                        ) : commentError &&
+                          comments.length === 0 ? (
                             <div className="flex items-center justify-between gap-3 rounded-xl bg-red-500/10 p-3">
                                 <p className="text-sm text-red-500">
                                     {commentError}
@@ -716,20 +811,25 @@ export default function PostCard({
                                         commentProfile?.full_name ||
                                         "Peerloop Member";
 
+                                    const commentAvatar =
+                                        commentProfile?.avatar_url;
+
                                     return (
                                         <div
                                             key={comment.id}
                                             className="flex items-start gap-3"
                                         >
-                                            {commentProfile?.avatar_url ? (
+                                            {commentAvatar ? (
                                                 <img
-                                                    src={commentProfile.avatar_url}
+                                                    src={commentAvatar}
                                                     alt={name}
                                                     className="size-9 shrink-0 rounded-full object-cover"
                                                 />
                                             ) : (
                                                 <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-sm font-bold text-white">
-                                                    {name.charAt(0).toUpperCase()}
+                                                    {name
+                                                        .charAt(0)
+                                                        .toUpperCase()}
                                                 </div>
                                             )}
 
@@ -770,7 +870,9 @@ export default function PostCard({
                                 <textarea
                                     value={commentText}
                                     onChange={(event) =>
-                                        setCommentText(event.target.value)
+                                        setCommentText(
+                                            event.target.value
+                                        )
                                     }
                                     placeholder="Write a comment..."
                                     rows={2}
@@ -818,7 +920,9 @@ export default function PostCard({
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
                     onMouseDown={(event) => {
-                        if (event.target === event.currentTarget) {
+                        if (
+                            event.target === event.currentTarget
+                        ) {
                             closeDeleteModal();
                         }
                     }}
@@ -841,8 +945,8 @@ export default function PostCard({
                             id="delete-modal-description"
                             className="mt-2 text-sm leading-relaxed text-[var(--muted-foreground)]"
                         >
-                            Are you sure you want to delete this post? This
-                            action cannot be undone.
+                            Are you sure you want to delete this
+                            post? This action cannot be undone.
                         </p>
 
                         {deleteError && (
@@ -888,4 +992,3 @@ export default function PostCard({
         </>
     );
 }
- 
